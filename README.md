@@ -58,8 +58,28 @@ chmod 600 /var/spool/cron/crontabs/root
 ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log
 ~~~
 
-
 ## 启动nginx+php容器
+
+加入已经启动了一个nginx容器
+
+~~~
+docker run --name nginx  -d -p 8080:80 -v tp:/code nginx:latest
+~~~
+
+我们需要做的是
+
+~~~
+创建网络
+docker network create php-nginx-network
+将nginx加入到php-nginx-network网络
+docker network connect php-nginx-network nginx
+启动php容器加入到php-nginx-network网络
+docker run --name myphp -v tp:/var/www/html --network php-nginx-network -p 9000:9000 -d zhiqiangwang/php:8.2-fpm-composer
+~~~
+
+> 需要注意的是nginx 配置 root目录一定是php中的目录/var/www/html
+>
+> fastcgi_pass 使用myphp:9000监听即可
 
 ### thinkphp nginx config
 
