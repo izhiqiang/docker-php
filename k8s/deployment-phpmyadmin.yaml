@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kube-serve
+  
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin
+  labels:
+    app: phpmyadmin
+  namespace: kube-serve
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: phpmyadmin
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin
+    spec:
+      containers:
+        - name: phpmyadmin
+          env:
+            - name: PMA_HOST
+              value: "192.168.3.110"
+          image: zhiqiangwang/php:phpmyadmin
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 500Mi
+          ports:
+            - containerPort: 80
+              name: tcp-80
+              protocol: TCP
