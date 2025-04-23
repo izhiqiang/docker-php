@@ -1,0 +1,38 @@
+FROM zhiqiangwang/php:8.2-fpm-nginx
+
+RUN apt update
+RUN apt-get install -y --no-install-recommends gnupg dirmngr
+
+RUN apt-get install -y --no-install-recommends libbz2-dev
+RUN docker-php-ext-install -j "$(nproc)" bz2
+
+ENV PMA_TEMPDIR=/var/www/html/tmp
+ENV PMA_CONFIG_DIR=/var/www/html/conf.d
+ENV PMA_UPLOADDIR=${PMA_TEMPDIR}/upload
+ENV PMA_SAVEDIR=${PMA_TEMPDIR}/save
+ENV PMA_HOST="localhost"
+ENV PMA_PORT=3306
+
+
+ENV PMA_VERSION=5.2.1
+ENV PMA_SHA256="373f9599dfbd96d6fe75316d5dad189e68c305f297edf42377db9dd6b41b2557"
+ENV PMA_GPGKEY="3D06A59ECE730EB71B511C17CE752F178259BD92"
+RUN cd /tmp \
+    && curl -fsSL -o phpMyAdmin.tar.xz https://files.phpmyadmin.net/phpMyAdmin/${PMA_VERSION}/phpMyAdmin-${PMA_VERSION}-all-languages.tar.xz \
+    && curl -fsSL -o phpMyAdmin.tar.xz.asc https://files.phpmyadmin.net/phpMyAdmin/${PMA_VERSION}/phpMyAdmin-${PMA_VERSION}-all-languages.tar.xz.asc \
+    && echo "${PMA_SHA256} *phpMyAdmin.tar.xz" | sha256sum -c - \
+    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${PMA_GPGKEY}" || gpg --batch --keyserver pgp.mit.edu --recv-keys "${PMA_GPGKEY}"  || gpg --batch --keyserver keyserver.pgp.com --recv-keys "${PMA_GPGKEY}"  || gpg --batch --keyserver keys.openpgp.org --recv-keys "${PMA_GPGKEY}" \
+    && gpg --batch --verify phpMyAdmin.tar.xz.asc phpMyAdmin.tar.xz \
+    && rm -rf /var/www/html/* \
+    && tar -xf phpMyAdmin.tar.xz -C /var/www/html --strip-components=1
+
+
+COPY ./conf/phpmyadmin/config.inc.php /var/www/html/config.inc.php
+COPY ./conf/phpmyadmin/docker-entrypoint.sh /docker-entrypoint.sh
+
+RUN mkdir -p ${PMA_UPLOADDIR} ${PMA_SAVEDIR} ${PMA_CONFIG_DIR} 
+RUN chmod +x /docker-entrypoint.sh
+
+RUN apt clean && rm -rf /tmp/* && rm -rf /var/lib/apt/lists/*
+
+CMD ["sh", "-c", "/docker-entrypoint.sh"]
