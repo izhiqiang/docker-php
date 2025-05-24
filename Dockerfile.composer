@@ -1,0 +1,10 @@
+ARG IMAGE_TAG="7.4-fpm"
+
+FROM zhiqiangwang/php:${IMAGE_TAG}
+
+RUN apt-get update
+
+RUN apt install -y --no-install-recommends git
+
+RUN  cd /tmp && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && php composer-setup.php && mv composer.phar /usr/local/bin/composer
+

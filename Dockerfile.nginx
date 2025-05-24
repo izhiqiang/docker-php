@@ -1,0 +1,28 @@
+ARG IMAGE_TAG="7.4-fpm"
+
+FROM zhiqiangwang/php:${IMAGE_TAG}
+
+RUN apt update 
+
+RUN apt install -y supervisor nginx git
+
+# 安装composer
+# https://getcomposer.org/download/
+RUN  cd /tmp \
+    && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"  \
+    && php composer-setup.php && mv composer.phar /usr/local/bin/composer \
+    && rm -rf /tmp/*
+
+
+ADD ./conf/nginx/default /etc/nginx/sites-enabled/default
+ADD ./conf/supervisor/nginx-php.conf /etc/supervisor/conf.d
+
+RUN mkdir -p /var/log/supervisor
+
+RUN echo "<?php phpinfo(); ?>" >> /var/www/html/index.php
+
+RUN apt clean && rm -rf /var/lib/apt/lists/* 
+
+EXPOSE 80 443 9000
+
+CMD ["supervisord", "-u", "root", "-c", "/etc/supervisor/supervisord.conf"]
