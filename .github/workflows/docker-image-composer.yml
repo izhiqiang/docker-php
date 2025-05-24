@@ -1,0 +1,46 @@
+name: docker-image-composer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        version:
+          - 7.4-fpm
+          - 7.4-cli
+          - 8.1-fpm
+          - 8.1-cli
+          - 8.2-fpm
+          - 8.2-cli
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push ${{ matrix.version }}-composer Docker image
+        uses: docker/build-push-action@v5
+        with:
+          file: ./Dockerfile.composer
+          push: true
+          build-args: |
+            IMAGE_TAG=${{ matrix.version }}
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            zhiqiangwang/php:${{ matrix.version }}-composer
+      
